@@ -12,7 +12,7 @@ body {
 .app {
   max-width: 980px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .panel {
@@ -29,9 +29,7 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
-.hidden {
-  display: none;
-}
+.hidden { display: none; }
 
 select,
 button {
@@ -53,14 +51,22 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.control-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .board {
+  --cell-size: 58px;
   display: grid;
-  grid-template-columns: repeat(7, 58px);
-  grid-template-rows: repeat(7, 58px);
+  grid-template-columns: repeat(7, var(--cell-size));
+  grid-template-rows: repeat(7, var(--cell-size));
   gap: 6px;
   width: fit-content;
   margin: 0 auto;
   user-select: none;
+  touch-action: manipulation;
 }
 
 .cell {
@@ -78,6 +84,10 @@ button:disabled {
 .cell.ai {
   background: #eb5757;
   border-color: #af2c2c;
+}
+
+.cell.anchor {
+  box-shadow: inset 0 0 0 3px #102a43;
 }
 
 .cell.ghost-legal {
@@ -114,10 +124,23 @@ button:disabled {
   background: #e7ecf2;
 }
 
-.card-preview .filled {
-  background: #7ea8ff;
-}
+.card-preview .filled { background: #7ea8ff; }
 
-.hint {
-  text-align: center;
+.mobile-controls h3 { margin-top: 0; }
+.dpad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  max-width: 220px;
+}
+#move-up { grid-column: 2; }
+#move-left { grid-column: 1; grid-row: 2; }
+#move-down { grid-column: 2; grid-row: 2; }
+#move-right { grid-column: 3; grid-row: 2; }
+
+.hint { text-align: center; }
+
+@media (max-width: 700px) {
+  .board { --cell-size: 42px; gap: 4px; }
+  .app { padding: 0.75rem; }
 }
