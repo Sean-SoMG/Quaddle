@@ -260,18 +260,45 @@ function finishGame() {
   heroEl.classList.remove('hidden');
   document.body.classList.remove('phase2-mode');
   const result = document.getElementById('result');
+  const resultWinner = document.getElementById('result-winner');
   const resultText = document.getElementById('result-text');
 
   let outcome = '';
-  if (state.score.player !== state.score.ai) {
-    outcome = state.score.player > state.score.ai ? 'You win by score.' : 'Digital opponent wins by score.';
+  let winnerLabel = '';
+  const reachedFive = state.score.player >= 5 || state.score.ai >= 5;
+
+  if (reachedFive && state.score.player !== state.score.ai) {
+    if (state.score.player > state.score.ai) {
+      winnerLabel = 'Winner: You';
+      outcome = 'Reason: first player to 5 points.';
+    } else {
+      winnerLabel = 'Winner: Digital Opponent';
+      outcome = 'Reason: first player to 5 points.';
+    }
+  } else if (state.score.player !== state.score.ai) {
+    if (state.score.player > state.score.ai) {
+      winnerLabel = 'Winner: You';
+      outcome = 'Reason: deck ended and you had the higher score.';
+    } else {
+      winnerLabel = 'Winner: Digital Opponent';
+      outcome = 'Reason: deck ended and opponent had the higher score.';
+    }
   } else {
     const p = countPieces('player');
     const a = countPieces('ai');
-    if (p === a) outcome = 'It is a tie (same score and same pieces on board).';
-    else outcome = p > a ? 'You win on tie-break (more pieces on board).' : 'Digital opponent wins on tie-break (more pieces on board).';
+    if (p === a) {
+      winnerLabel = 'Result: Tie';
+      outcome = 'Reason: score tied and both players had the same number of pieces on board.';
+    } else if (p > a) {
+      winnerLabel = 'Winner: You';
+      outcome = 'Reason: score tied, winner had the most pieces on the board.';
+    } else {
+      winnerLabel = 'Winner: Digital Opponent';
+      outcome = 'Reason: score tied, winner had the most pieces on the board.';
+    }
   }
 
+  resultWinner.textContent = winnerLabel;
   resultText.textContent = `Final score ${state.score.player} - ${state.score.ai}. ${outcome}`;
   result.classList.remove('hidden');
 }
