@@ -26,6 +26,7 @@ Open <http://localhost:4173>.
   - In phase 2, overlap may include unlimited own pieces and up to 3 opponent pieces.
 - Overlay preview while moving the placement anchor:
   - legal placements are highlighted.
+  - transparent blue/red ghost cells show the final color outcome if placed there.
   - illegal placements render a red X overlay.
 - Rotation in 90° increments.
 - Scoring and line clear:
