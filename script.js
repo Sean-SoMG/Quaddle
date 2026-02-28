@@ -114,18 +114,35 @@ function applyMove(move, player) {
   const clearCols = [];
 
   for (let y = 0; y < BOARD_SIZE; y++) {
-    if (state.board[y].every((v) => v === player)) clearRows.push(y);
+    const owner = state.board[y][0];
+    if (owner && state.board[y].every((v) => v === owner)) {
+      clearRows.push({ index: y, owner });
+      state.score[owner] += 1;
+    }
   }
 
   for (let x = 0; x < BOARD_SIZE; x++) {
+    const owner = state.board[0][x];
+    if (!owner) continue;
     let full = true;
-    for (let y = 0; y < BOARD_SIZE; y++) if (state.board[y][x] !== player) full = false;
-    if (full) clearCols.push(x);
+    for (let y = 0; y < BOARD_SIZE; y++) {
+      if (state.board[y][x] !== owner) {
+        full = false;
+        break;
+      }
+    }
+    if (full) {
+      clearCols.push({ index: x, owner });
+      state.score[owner] += 1;
+    }
   }
 
-  state.score[player] += clearRows.length + clearCols.length;
-  for (const y of clearRows) for (let x = 0; x < BOARD_SIZE; x++) state.board[y][x] = null;
-  for (const x of clearCols) for (let y = 0; y < BOARD_SIZE; y++) state.board[y][x] = null;
+  for (const { index } of clearRows) {
+    for (let x = 0; x < BOARD_SIZE; x++) state.board[index][x] = null;
+  }
+  for (const { index } of clearCols) {
+    for (let y = 0; y < BOARD_SIZE; y++) state.board[y][index] = null;
+  }
 }
 
 function countPieces(player) {
@@ -377,6 +394,7 @@ rotateBtn.addEventListener('click', () => {
 placeBtn.addEventListener('click', tryPlacePlayerMove);
 
 boardEl.addEventListener('pointermove', (event) => {
+  if (event.pointerType && event.pointerType !== 'mouse') return;
   const target = event.target.closest('.cell');
   if (!target || state.turn !== 'player' || state.gameOver) return;
   const x = Number(target.dataset.x);
