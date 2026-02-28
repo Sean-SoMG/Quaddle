@@ -10,15 +10,7 @@ const SHAPES = {
   Z: [[0, 0], [1, 0], [1, 1], [2, 1]],
 };
 
-const CARD_DISTRIBUTION = {
-  I: 6,
-  O: 8,
-  T: 8,
-  L: 8,
-  J: 8,
-  S: 8,
-  Z: 8,
-};
+const CARD_DISTRIBUTION = { I: 6, O: 8, T: 8, L: 8, J: 8, S: 8, Z: 8 };
 
 const state = {
   board: [],
@@ -29,7 +21,7 @@ const state = {
   difficulty: 'standard',
   card: null,
   rotation: 0,
-  hoverCell: null,
+  cursor: { x: 0, y: 0 },
   gameOver: false,
 };
 
@@ -37,6 +29,7 @@ const boardEl = document.getElementById('board');
 const startBtn = document.getElementById('start-btn');
 const restartBtn = document.getElementById('restart-btn');
 const rotateBtn = document.getElementById('rotate-btn');
+const placeBtn = document.getElementById('place-btn');
 const difficultyEl = document.getElementById('difficulty');
 
 function initBoard() {
@@ -77,15 +70,12 @@ function checkMove(cells, player, phase2) {
   let oppOverlaps = 0;
   const opponent = player === 'player' ? 'ai' : 'player';
   for (const [x, y] of cells) {
-    if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) return { legal: false, reason: 'bounds' };
+    if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) return { legal: false };
     const slot = state.board[y][x];
-    if (!phase2 && slot !== null) return { legal: false, reason: 'phase1_overlap' };
-    if (phase2 && slot === opponent) {
-      oppOverlaps++;
-      if (oppOverlaps > 3) return { legal: false, reason: 'too_many_opp_overlap' };
-    }
+    if (!phase2 && slot !== null) return { legal: false };
+    if (phase2 && slot === opponent && ++oppOverlaps > 3) return { legal: false };
   }
-  return { legal: true, oppOverlaps };
+  return { legal: true };
 }
 
 function legalMoves(shape, player, phase2) {
@@ -94,8 +84,7 @@ function legalMoves(shape, player, phase2) {
     for (let y = 0; y < BOARD_SIZE; y++) {
       for (let x = 0; x < BOARD_SIZE; x++) {
         const cells = getPlacedCells(shape, rot, x, y);
-        const result = checkMove(cells, player, phase2);
-        if (result.legal) moves.push({ x, y, rot, cells });
+        if (checkMove(cells, player, phase2).legal) moves.push({ x, y, rot, cells });
       }
     }
   }
@@ -103,9 +92,7 @@ function legalMoves(shape, player, phase2) {
 }
 
 function maybeUnlockPhase2(player) {
-  if (state.phase2 || !state.card) return;
-  const nonOverlapMoves = legalMoves(state.card, player, false);
-  if (nonOverlapMoves.length === 0) state.phase2 = true;
+  if (!state.phase2 && state.card && legalMoves(state.card, player, false).length === 0) state.phase2 = true;
 }
 
 function applyMove(move, player) {
@@ -119,36 +106,20 @@ function applyMove(move, player) {
 
   const clearRows = [];
   const clearCols = [];
-
-  for (let y = 0; y < BOARD_SIZE; y++) {
-    if (state.board[y].every((v) => v === player)) clearRows.push(y);
-  }
+  for (let y = 0; y < BOARD_SIZE; y++) if (state.board[y].every((v) => v === player)) clearRows.push(y);
   for (let x = 0; x < BOARD_SIZE; x++) {
     let full = true;
-    for (let y = 0; y < BOARD_SIZE; y++) {
-      if (state.board[y][x] !== player) {
-        full = false;
-        break;
-      }
-    }
+    for (let y = 0; y < BOARD_SIZE; y++) if (state.board[y][x] !== player) full = false;
     if (full) clearCols.push(x);
   }
 
   state.score[player] += clearRows.length + clearCols.length;
-  for (const y of clearRows) {
-    for (let x = 0; x < BOARD_SIZE; x++) state.board[y][x] = null;
-  }
-  for (const x of clearCols) {
-    for (let y = 0; y < BOARD_SIZE; y++) state.board[y][x] = null;
-  }
+  for (const y of clearRows) for (let x = 0; x < BOARD_SIZE; x++) state.board[y][x] = null;
+  for (const x of clearCols) for (let y = 0; y < BOARD_SIZE; y++) state.board[y][x] = null;
 }
 
 function countPieces(player) {
-  let n = 0;
-  for (let y = 0; y < BOARD_SIZE; y++) {
-    for (let x = 0; x < BOARD_SIZE; x++) if (state.board[y][x] === player) n++;
-  }
-  return n;
+  return state.board.flat().filter((p) => p === player).length;
 }
 
 function evaluateMove(move, player, difficulty) {
@@ -160,62 +131,59 @@ function evaluateMove(move, player, difficulty) {
   const pieceAdv = countPieces(player) - countPieces(opponent);
   state.board = snapshot;
   state.score = scoreBefore;
-
   if (difficulty === 'easy') return Math.random() * 10;
   if (difficulty === 'standard') return gained * 10 + pieceAdv + Math.random() * 4;
   return gained * 15 + pieceAdv * 2;
 }
 
 function drawCardForTurn() {
-  if (state.deck.length === 0) {
-    finishGame();
-    return false;
-  }
-
+  if (state.deck.length === 0) return finishGame(), false;
   state.card = state.deck.pop();
   state.rotation = 0;
+  state.cursor = { x: 1, y: 1 };
   maybeUnlockPhase2(state.turn);
   return true;
 }
 
+function currentPlayerMove() {
+  return {
+    x: state.cursor.x,
+    y: state.cursor.y,
+    rot: state.rotation,
+    cells: getPlacedCells(state.card, state.rotation, state.cursor.x, state.cursor.y),
+  };
+}
+
+function tryPlacePlayerMove() {
+  if (state.turn !== 'player' || state.gameOver || !state.card) return;
+  const move = currentPlayerMove();
+  if (!checkMove(move.cells, 'player', state.phase2).legal) return;
+  applyMove(move, 'player');
+  endTurn();
+  render();
+}
+
 function doAITurn() {
   if (state.gameOver) return;
-  const phase2 = state.phase2;
-  let moves = legalMoves(state.card, 'ai', phase2);
-  if (!phase2 && moves.length === 0) {
+  let moves = legalMoves(state.card, 'ai', state.phase2);
+  if (!state.phase2 && moves.length === 0) {
     state.phase2 = true;
     moves = legalMoves(state.card, 'ai', true);
   }
-
   if (moves.length > 0) {
-    const scored = moves.map((m) => ({ move: m, score: evaluateMove(m, 'ai', state.difficulty) }));
-    scored.sort((a, b) => b.score - a.score);
-    const pick = state.difficulty === 'easy'
-      ? scored[Math.floor(Math.random() * Math.min(5, scored.length))]
-      : scored[0];
+    const scored = moves.map((m) => ({ move: m, score: evaluateMove(m, 'ai', state.difficulty) })).sort((a, b) => b.score - a.score);
+    const pick = state.difficulty === 'easy' ? scored[Math.floor(Math.random() * Math.min(5, scored.length))] : scored[0];
     applyMove(pick.move, 'ai');
   }
-
   endTurn();
 }
 
 function endTurn() {
-  if (state.score.player >= 5 || state.score.ai >= 5) {
-    finishGame();
-    return;
-  }
-
+  if (state.score.player >= 5 || state.score.ai >= 5) return finishGame();
   state.turn = state.turn === 'player' ? 'ai' : 'player';
   if (!drawCardForTurn()) return;
-
   render();
-
-  if (state.turn === 'ai') {
-    setTimeout(() => {
-      doAITurn();
-      render();
-    }, 500);
-  }
+  if (state.turn === 'ai') setTimeout(() => { doAITurn(); render(); }, 500);
 }
 
 function finishGame() {
@@ -223,17 +191,13 @@ function finishGame() {
   document.getElementById('game').classList.add('hidden');
   const result = document.getElementById('result');
   const resultText = document.getElementById('result-text');
-
   let outcome = '';
-  if (state.score.player !== state.score.ai) {
-    outcome = state.score.player > state.score.ai ? 'You win by score.' : 'Digital opponent wins by score.';
-  } else {
+  if (state.score.player !== state.score.ai) outcome = state.score.player > state.score.ai ? 'You win by score.' : 'Digital opponent wins by score.';
+  else {
     const p = countPieces('player');
     const a = countPieces('ai');
-    if (p === a) outcome = 'It is a tie (same score and same pieces on board).';
-    else outcome = p > a ? 'You win on tie-break (more pieces on board).' : 'Digital opponent wins on tie-break (more pieces on board).';
+    outcome = p === a ? 'It is a tie (same score and same pieces on board).' : (p > a ? 'You win on tie-break (more pieces on board).' : 'Digital opponent wins on tie-break (more pieces on board).');
   }
-
   resultText.textContent = `Final score ${state.score.player} - ${state.score.ai}. ${outcome}`;
   result.classList.remove('hidden');
 }
@@ -241,8 +205,7 @@ function finishGame() {
 function updatePreview() {
   const preview = document.getElementById('card-preview');
   preview.innerHTML = '';
-  const cells = getRotatedCells(state.card, state.rotation);
-  const fillSet = new Set(cells.map(([x, y]) => `${x},${y}`));
+  const fillSet = new Set(getRotatedCells(state.card, state.rotation).map(([x, y]) => `${x},${y}`));
   for (let y = 0; y < 4; y++) {
     for (let x = 0; x < 4; x++) {
       const div = document.createElement('div');
@@ -252,49 +215,43 @@ function updatePreview() {
   }
 }
 
+function moveCursor(dx, dy) {
+  state.cursor.x = Math.max(0, Math.min(BOARD_SIZE - 1, state.cursor.x + dx));
+  state.cursor.y = Math.max(0, Math.min(BOARD_SIZE - 1, state.cursor.y + dy));
+  renderBoard();
+}
+
 function renderBoard() {
   boardEl.innerHTML = '';
-  const overlay = state.turn === 'player' && state.hoverCell && state.card
-    ? getPlacedCells(state.card, state.rotation, state.hoverCell.x, state.hoverCell.y)
-    : null;
-
-  let overlayLegality = { legal: false };
-  if (overlay) overlayLegality = checkMove(overlay, 'player', state.phase2);
-
+  const overlay = state.turn === 'player' && state.card ? getPlacedCells(state.card, state.rotation, state.cursor.x, state.cursor.y) : null;
+  const overlayLegality = overlay ? checkMove(overlay, 'player', state.phase2) : { legal: false };
   const overlaySet = overlay ? new Set(overlay.map(([x, y]) => `${x},${y}`)) : new Set();
 
   for (let y = 0; y < BOARD_SIZE; y++) {
     for (let x = 0; x < BOARD_SIZE; x++) {
-      const cell = document.createElement('div');
+      const cell = document.createElement('button');
+      cell.type = 'button';
       cell.className = 'cell';
       const owner = state.board[y][x];
       if (owner) cell.classList.add(owner);
-
-      if (overlaySet.has(`${x},${y}`)) {
-        cell.classList.add(overlayLegality.legal ? 'ghost-legal' : 'ghost-illegal');
-      }
+      if (state.turn === 'player' && state.cursor.x === x && state.cursor.y === y) cell.classList.add('anchor');
+      if (overlaySet.has(`${x},${y}`)) cell.classList.add(overlayLegality.legal ? 'ghost-legal' : 'ghost-illegal');
 
       cell.addEventListener('mouseenter', () => {
-        if (state.turn === 'player' && !state.gameOver) {
-          state.hoverCell = { x, y };
-          renderBoard();
-        }
+        if (state.turn !== 'player' || state.gameOver) return;
+        state.cursor = { x, y };
+        renderBoard();
       });
 
       cell.addEventListener('click', () => {
         if (state.turn !== 'player' || state.gameOver) return;
-        const move = {
-          x,
-          y,
-          rot: state.rotation,
-          cells: getPlacedCells(state.card, state.rotation, x, y),
-        };
-        const legal = checkMove(move.cells, 'player', state.phase2).legal;
-        if (!legal) return;
-        applyMove(move, 'player');
-        state.hoverCell = null;
-        endTurn();
-        render();
+        state.cursor = { x, y };
+        const tappedMove = currentPlayerMove();
+        if (checkMove(tappedMove.cells, 'player', state.phase2).legal) {
+          tryPlacePlayerMove();
+        } else {
+          render();
+        }
       });
 
       boardEl.appendChild(cell);
@@ -311,7 +268,10 @@ function render() {
   document.getElementById('ai-score').textContent = state.score.ai;
   document.getElementById('card-shape').textContent = state.card ?? '-';
   document.getElementById('rotation-label').textContent = `${state.rotation * 90}°`;
-  rotateBtn.disabled = state.turn !== 'player';
+  document.getElementById('anchor-label').textContent = `(${state.cursor.x}, ${state.cursor.y})`;
+  const canInteract = state.turn === 'player';
+  rotateBtn.disabled = !canInteract;
+  placeBtn.disabled = !canInteract;
   if (state.card) updatePreview();
   renderBoard();
 }
@@ -324,15 +284,12 @@ function startGame() {
   state.score = { player: 0, ai: 0 };
   state.card = null;
   state.rotation = 0;
-  state.hoverCell = null;
+  state.cursor = { x: 1, y: 1 };
   state.gameOver = false;
-
   initBoard();
-
   document.getElementById('setup').classList.add('hidden');
   document.getElementById('result').classList.add('hidden');
   document.getElementById('game').classList.remove('hidden');
-
   drawCardForTurn();
   render();
 }
@@ -348,6 +305,12 @@ rotateBtn.addEventListener('click', () => {
   state.rotation = (state.rotation + 1) % 4;
   render();
 });
+placeBtn.addEventListener('click', tryPlacePlayerMove);
+
+document.getElementById('move-up').addEventListener('click', () => state.turn === 'player' && moveCursor(0, -1));
+document.getElementById('move-down').addEventListener('click', () => state.turn === 'player' && moveCursor(0, 1));
+document.getElementById('move-left').addEventListener('click', () => state.turn === 'player' && moveCursor(-1, 0));
+document.getElementById('move-right').addEventListener('click', () => state.turn === 'player' && moveCursor(1, 0));
 
 initBoard();
 renderBoard();
