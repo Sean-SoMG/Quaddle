@@ -8,7 +8,10 @@
 </head>
 <body>
   <main class="app">
-    <h1>Quaddle Solo Digital</h1>
+    <header class="hero panel">
+      <h1>Quaddle Solo Digital</h1>
+      <p class="subtitle">Solo mode vs digital opponent</p>
+    </header>
 
     <section id="setup" class="panel">
       <h2>Start Game</h2>
@@ -22,16 +25,23 @@
     </section>
 
     <section id="game" class="hidden">
-      <div class="status-grid">
-        <div class="panel">
-          <h2>Status</h2>
+      <div class="scoreboard panel">
+        <div class="score-pill player-pill">
+          <span>Player</span>
+          <strong id="player-score">0</strong>
+        </div>
+        <div class="score-center">
           <p><strong>Turn:</strong> <span id="turn-label"></span></p>
           <p><strong>Phase:</strong> <span id="phase-label">Phase 1</span></p>
           <p><strong>Cards left:</strong> <span id="cards-left"></span></p>
-          <p><strong>Player score:</strong> <span id="player-score">0</span></p>
-          <p><strong>Opponent score:</strong> <span id="ai-score">0</span></p>
         </div>
+        <div class="score-pill ai-pill">
+          <span>Opponent</span>
+          <strong id="ai-score">0</strong>
+        </div>
+      </div>
 
+      <div class="status-grid">
         <div class="panel">
           <h2>Current Card</h2>
           <p><strong>Shape:</strong> <span id="card-shape">-</span></p>
@@ -45,10 +55,11 @@
       </div>
 
       <div id="board" class="board" aria-label="Game board"></div>
+      <p id="ai-banner" class="ai-banner hidden">Opponent is planning move…</p>
 
       <div class="panel mobile-controls">
         <h3>Touch Controls</h3>
-        <p>Tap a grid square to move the shape anchor. Use controls below if needed.</p>
+        <p>Tap a grid square to position, then tap again to place if legal.</p>
         <div class="dpad-grid">
           <button id="move-up">↑</button>
           <button id="move-left">←</button>
@@ -57,7 +68,7 @@
         </div>
       </div>
 
-      <p id="hint" class="hint">Tap/click a cell to move the shape. Place with the Place Shape button or by tapping a legal position.</p>
+      <p id="hint" class="hint">Left click/tap places. Right click rotates on PC. Transparent preview shows the resulting colors after placement.</p>
     </section>
 
     <section id="result" class="panel hidden">
