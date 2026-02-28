@@ -30,6 +30,7 @@
           <p><strong>Cards left:</strong> <span id="cards-left"></span></p>
           <p><strong>Player score:</strong> <span id="player-score">0</span></p>
           <p><strong>Opponent score:</strong> <span id="ai-score">0</span></p>
+          <p><strong>Placement anchor:</strong> <span id="anchor-label">(0,0)</span></p>
         </div>
 
         <div class="panel">
@@ -37,12 +38,27 @@
           <p><strong>Shape:</strong> <span id="card-shape">-</span></p>
           <p><strong>Rotation:</strong> <span id="rotation-label">0°</span></p>
           <div id="card-preview" class="card-preview"></div>
-          <button id="rotate-btn">Rotate 90°</button>
+          <div class="control-row">
+            <button id="rotate-btn">Rotate 90°</button>
+            <button id="place-btn">Place Shape</button>
+          </div>
         </div>
       </div>
 
       <div id="board" class="board" aria-label="Game board"></div>
-      <p id="hint" class="hint">Click a cell to place the top-left of the current shape.</p>
+
+      <div class="panel mobile-controls">
+        <h3>Touch Controls</h3>
+        <p>Tap a grid square to move the shape anchor. Use controls below if needed.</p>
+        <div class="dpad-grid">
+          <button id="move-up">↑</button>
+          <button id="move-left">←</button>
+          <button id="move-down">↓</button>
+          <button id="move-right">→</button>
+        </div>
+      </div>
+
+      <p id="hint" class="hint">Tap/click a cell to move the shape. Place with the Place Shape button or by tapping a legal position.</p>
     </section>
 
     <section id="result" class="panel hidden">
