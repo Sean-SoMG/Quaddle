@@ -37,7 +37,7 @@ Open <http://localhost:4173>.
 
 ## PC + mobile controls
 
-- Tap/click any grid square to move the shape anchor there.
-- Tap/click a legal position to place immediately.
-- Or use **Place Shape** button for explicit confirmation.
+- Left click/tap a legal grid position to place immediately.
+- Right click on PC rotates the current shape by 90°.
+- **Place Shape** can still be used for explicit confirmation after positioning.
 - On mobile, use the on-screen arrow controls to fine-tune anchor position.
