@@ -36,6 +36,12 @@ Open <http://localhost:4173>.
   - stop at 5 points or when deck is empty.
   - tie-break by pieces on board, then true tie.
 
+## UX improvements
+
+- Left click/tap now directly attempts placement at the clicked position.
+- Opponent move includes a short “planning + intent preview” delay so the player can see where AI is about to place.
+- Scoreboard is emphasized in a top app-style panel for quick at-a-glance tracking.
+
 ## PC + mobile controls
 
 - Left click/tap a legal grid position to place immediately.
