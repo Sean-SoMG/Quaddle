@@ -329,8 +329,6 @@ function render() {
   document.getElementById('cards-left').textContent = state.deck.length;
   document.getElementById('player-score').textContent = state.score.player;
   document.getElementById('ai-score').textContent = state.score.ai;
-  document.getElementById('card-shape').textContent = state.card ?? '-';
-  document.getElementById('rotation-label').textContent = `${state.rotation * 90}°`;
 
   const playerTurn = state.turn === 'player';
   rotateBtn.disabled = !playerTurn;
