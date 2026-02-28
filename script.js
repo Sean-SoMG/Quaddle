@@ -234,7 +234,6 @@ function renderBoard() {
       cell.className = 'cell';
       const owner = state.board[y][x];
       if (owner) cell.classList.add(owner);
-      if (state.turn === 'player' && state.cursor.x === x && state.cursor.y === y) cell.classList.add('anchor');
       if (overlaySet.has(`${x},${y}`)) cell.classList.add(overlayLegality.legal ? 'ghost-legal' : 'ghost-illegal');
 
       cell.addEventListener('mouseenter', () => {
@@ -254,6 +253,14 @@ function renderBoard() {
         }
       });
 
+      cell.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        if (state.turn !== 'player' || state.gameOver) return;
+        state.cursor = { x, y };
+        state.rotation = (state.rotation + 1) % 4;
+        render();
+      });
+
       boardEl.appendChild(cell);
     }
   }
@@ -268,7 +275,6 @@ function render() {
   document.getElementById('ai-score').textContent = state.score.ai;
   document.getElementById('card-shape').textContent = state.card ?? '-';
   document.getElementById('rotation-label').textContent = `${state.rotation * 90}°`;
-  document.getElementById('anchor-label').textContent = `(${state.cursor.x}, ${state.cursor.y})`;
   const canInteract = state.turn === 'player';
   rotateBtn.disabled = !canInteract;
   placeBtn.disabled = !canInteract;
