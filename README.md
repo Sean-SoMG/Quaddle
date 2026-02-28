@@ -24,7 +24,7 @@ Open <http://localhost:4173>.
   - Phase 1 prevents overlap.
   - Phase 2 unlocks when a turn's card cannot be played without overlap.
   - In phase 2, overlap may include unlimited own pieces and up to 3 opponent pieces.
-- Overlay preview while hovering:
+- Overlay preview while moving the placement anchor:
   - legal placements are highlighted.
   - illegal placements render a red X overlay.
 - Rotation in 90° increments.
@@ -34,3 +34,10 @@ Open <http://localhost:4173>.
 - End-game logic:
   - stop at 5 points or when deck is empty.
   - tie-break by pieces on board, then true tie.
+
+## PC + mobile controls
+
+- Tap/click any grid square to move the shape anchor there.
+- Tap/click a legal position to place immediately.
+- Or use **Place Shape** button for explicit confirmation.
+- On mobile, use the on-screen arrow controls to fine-tune anchor position.
