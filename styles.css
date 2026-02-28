@@ -15,7 +15,7 @@ body {
   margin: 0 auto;
   min-height: calc(100svh - var(--host-header-space));
   max-height: calc(100svh - var(--host-header-space));
-  padding: calc(env(safe-area-inset-top) + 0.3rem) 0.45rem calc(env(safe-area-inset-bottom) + 0.35rem);
+  padding: calc(env(safe-area-inset-top) + 0.3rem) 0.45rem calc(env(safe-area-inset-bottom) + 4.4rem);
   overflow-x: clip;
   overflow-y: auto;
 }
@@ -67,7 +67,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   grid-template-columns: 1fr 1fr auto;
   align-items: center;
   gap: 0.4rem;
-  margin-bottom: 0;
+  margin-bottom: calc(env(safe-area-inset-bottom) + 4.2rem);
 }
 
 .score-pill {
@@ -225,7 +225,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   position: static;
   background: rgba(255, 255, 255, 0.97);
   padding: 0.4rem;
-  margin-bottom: 0;
+  margin-bottom: calc(env(safe-area-inset-bottom) + 4.2rem);
 }
 
 .dock-main-actions {
