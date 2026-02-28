@@ -10,7 +10,6 @@
   <main class="app">
     <header class="hero panel">
       <h1>Quaddle Solo Digital</h1>
-      <p class="subtitle">Solo mode vs digital opponent</p>
     </header>
 
     <section id="setup" class="panel">
@@ -41,15 +40,23 @@
         </div>
       </div>
 
-      <div class="status-grid">
-        <div class="panel">
-          <h2>Current Card</h2>
-          <p><strong>Shape:</strong> <span id="card-shape">-</span></p>
-          <p><strong>Rotation:</strong> <span id="rotation-label">0°</span></p>
+      <div class="top-controls compact-row">
+        <div class="panel card-panel">
+          <h2>Card</h2>
           <div id="card-preview" class="card-preview"></div>
           <div class="control-row">
             <button id="rotate-btn">Rotate 90°</button>
-            <button id="place-btn">Place Shape</button>
+            <button id="place-btn">Place</button>
+          </div>
+        </div>
+
+        <div class="panel movement-panel">
+          <h2>Move</h2>
+          <div class="dpad-grid">
+            <button id="move-up">↑</button>
+            <button id="move-left">←</button>
+            <button id="move-down">↓</button>
+            <button id="move-right">→</button>
           </div>
         </div>
       </div>
@@ -57,18 +64,7 @@
       <div id="board" class="board" aria-label="Game board"></div>
       <p id="ai-banner" class="ai-banner hidden">Opponent is planning move…</p>
 
-      <div class="panel mobile-controls">
-        <h3>Touch Controls</h3>
-        <p>Tap a grid square to position, then tap again to place if legal.</p>
-        <div class="dpad-grid">
-          <button id="move-up">↑</button>
-          <button id="move-left">←</button>
-          <button id="move-down">↓</button>
-          <button id="move-right">→</button>
-        </div>
-      </div>
-
-      <p id="hint" class="hint">Left click/tap places. Right click rotates on PC. Transparent preview shows the resulting colors after placement.</p>
+      <p id="hint" class="hint">Tap/click to place. Right click rotates on PC.</p>
     </section>
 
     <section id="result" class="panel hidden">
