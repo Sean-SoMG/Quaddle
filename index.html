@@ -8,7 +8,7 @@
 </head>
 <body>
   <main class="app">
-    <header class="hero panel">
+    <header id="hero" class="hero panel">
       <h1>Quaddle Solo Digital</h1>
     </header>
 
@@ -29,14 +29,14 @@
           <span>Player</span>
           <strong id="player-score">0</strong>
         </div>
+        <div class="score-pill ai-pill">
+          <span>Opponent</span>
+          <strong id="ai-score">0</strong>
+        </div>
         <div class="score-center">
           <p><strong>Turn:</strong> <span id="turn-label"></span></p>
           <p><strong>Phase:</strong> <span id="phase-label">Phase 1</span></p>
           <p><strong>Cards:</strong> <span id="cards-left"></span></p>
-        </div>
-        <div class="score-pill ai-pill">
-          <span>Opponent</span>
-          <strong id="ai-score">0</strong>
         </div>
       </div>
 
