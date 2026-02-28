@@ -30,7 +30,9 @@ Open <http://localhost:4173>.
   - illegal placements render a red X overlay.
 - Rotation in 90° increments.
 - Scoring and line clear:
-  - +1 point per completed row/column entirely in your color.
+  - +1 point per completed row/column for the player who owns all cells in that line.
+  - Multiple rows/columns can score on the same turn.
+  - If one move completes lines for both sides, each side gets points for their own completed lines.
   - Completed lines are removed.
 - End-game logic:
   - stop at 5 points or when deck is empty.
@@ -40,8 +42,10 @@ Open <http://localhost:4173>.
 
 - Left click/tap directly attempts placement at the clicked position.
 - Opponent move includes a short “planning + intent preview” delay so the player can see where AI is about to place.
-- Card panel is compact (outline only), with movement controls beside it to maximize board and score visibility on phones/tablets.
+- Card panel + move guide are compact at top, while main action buttons are moved into a sticky bottom dock for thumb-friendly phone/tablet play.
+- Layout accounts for mobile safe-area bars and a hosting header by reducing vertical clutter and prioritizing board + scores.
 - Scoreboard is emphasized in a top app-style panel for quick at-a-glance tracking.
+- Valid/illegal overlays are higher-contrast with explicit check/X indicators for clearer move readability.
 
 ## PC + mobile controls
 
