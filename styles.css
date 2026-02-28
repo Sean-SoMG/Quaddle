@@ -74,18 +74,35 @@ button:disabled {
   border: 2px solid #cad5e3;
   background: #fff;
   position: relative;
+  transition: background 120ms ease, border-color 120ms ease;
 }
 
 .cell.player {
-  background: #2f80ed;
-  border-color: #1360c7;
+  background: #2467c8;
+  border-color: #0f4fa8;
 }
 
 .cell.ai {
-  background: #eb5757;
-  border-color: #af2c2c;
+  background: #d14545;
+  border-color: #972323;
 }
 
+.cell.ghost-player::before,
+.cell.ghost-ai::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.cell.ghost-player::before {
+  background: rgba(47, 128, 237, 0.45);
+}
+
+.cell.ghost-ai::before {
+  background: rgba(235, 87, 87, 0.45);
+}
 
 .cell.ghost-legal {
   outline: 3px solid #4cc9f0;
