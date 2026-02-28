@@ -16,7 +16,8 @@ body {
   min-height: calc(100svh - var(--host-header-space));
   max-height: calc(100svh - var(--host-header-space));
   padding: calc(env(safe-area-inset-top) + 0.3rem) 0.45rem calc(env(safe-area-inset-bottom) + 0.35rem);
-  overflow: clip;
+  overflow-x: clip;
+  overflow-y: auto;
 }
 
 .panel {
@@ -40,6 +41,8 @@ body {
   gap: 0.35rem;
   grid-template-rows: auto auto 1fr auto;
   max-height: calc(100svh - var(--host-header-space) - 1.25rem);
+  overflow-y: auto;
+  padding-right: 0.1rem;
 }
 
 select,
