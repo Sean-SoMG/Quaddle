@@ -38,8 +38,9 @@ Open <http://localhost:4173>.
 
 ## UX improvements
 
-- Left click/tap now directly attempts placement at the clicked position.
+- Left click/tap directly attempts placement at the clicked position.
 - Opponent move includes a short “planning + intent preview” delay so the player can see where AI is about to place.
+- Card panel is compact (outline only), with movement controls beside it to maximize board and score visibility on phones/tablets.
 - Scoreboard is emphasized in a top app-style panel for quick at-a-glance tracking.
 
 ## PC + mobile controls
