@@ -86,9 +86,6 @@ button:disabled {
   border-color: #af2c2c;
 }
 
-.cell.anchor {
-  box-shadow: inset 0 0 0 3px #102a43;
-}
 
 .cell.ghost-legal {
   outline: 3px solid #4cc9f0;
