@@ -42,8 +42,9 @@ Open <http://localhost:4173>.
 
 - Left click/tap directly attempts placement at the clicked position.
 - Opponent move includes a short “planning + intent preview” delay so the player can see where AI is about to place.
-- Card panel + move guide are compact at top, while main action buttons are moved into a sticky bottom dock for thumb-friendly phone/tablet play.
-- Layout accounts for mobile safe-area bars and a hosting header by reducing vertical clutter and prioritizing board + scores.
+- Scores are compact and side-by-side to preserve space on mobile while keeping turn/phase/cards visible.
+- Card panel + move guide stay compact at top, while main action buttons are moved into a centered sticky bottom dock for thumb-friendly phone/tablet play.
+- Layout accounts for mobile safe-area bars and a hosting header by reducing vertical clutter and prioritizing board + scores in one screen.
 - Scoreboard is emphasized in a top app-style panel for quick at-a-glance tracking.
 - Valid/illegal overlays are higher-contrast with explicit check/X indicators for clearer move readability.
 
