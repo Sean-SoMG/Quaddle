@@ -76,13 +76,16 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
   margin-bottom: 0;
+  position: sticky;
+  top: 0;
+  z-index: 4;
 }
 
 .score-pill {
   border-radius: 12px;
-  padding: 0.35rem 0.55rem;
+  padding: 0.3rem 0.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -93,34 +96,34 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .score-pill strong { font-size: 1.15rem; line-height: 1; min-width: 1.7rem; text-align: right; }
 .player-pill { background: #dcecff; color: #0f4fa8; }
 .ai-pill { background: #ffe0e0; color: #972323; }
-.score-center { grid-column: 1 / -1; display: flex; justify-content: space-around; gap: 0.35rem; text-align: center; font-size: 0.78rem; white-space: nowrap; }
+.score-center { grid-column: 1 / -1; display: flex; justify-content: space-around; gap: 0.3rem; text-align: center; font-size: 0.74rem; white-space: nowrap; }
 .score-center p { margin: 0.05rem 0; }
 
 .compact-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.4rem;
+  gap: 0.3rem;
   align-items: stretch;
 }
 
 .card-panel h2,
 .legend-panel h2 {
-  margin: 0 0 0.2rem;
-  font-size: 0.85rem;
+  margin: 0 0 0.12rem;
+  font-size: 0.8rem;
 }
 
-.mini-note {
-  margin: 0.25rem 0 0;
-  font-size: 0.66rem;
-  color: #495a78;
-}
-
-.legend-panel p {
-  margin: 0.18rem 0;
+.guide-row {
   display: flex;
-  align-items: center;
   gap: 0.35rem;
-  font-size: 0.72rem;
+  flex-wrap: wrap;
+}
+
+.guide-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  font-size: 0.68rem;
+  font-weight: 700;
 }
 
 .swatch {
@@ -274,4 +277,13 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   .app { padding-left: 0.35rem; padding-right: 0.35rem; }
   .board { --cell-size: min(11.2vw, 5svh, 44px); }
   .legend-panel p { font-size: 0.68rem; }
+}
+
+.winner-banner {
+  margin: 0 0 0.35rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 10px;
+  font-weight: 800;
+  background: #eef5ff;
+  color: #0f4fa8;
 }
