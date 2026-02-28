@@ -35,6 +35,8 @@ const rotateBtn = document.getElementById('rotate-btn');
 const placeBtn = document.getElementById('place-btn');
 const difficultyEl = document.getElementById('difficulty');
 const aiBannerEl = document.getElementById('ai-banner');
+const gameEl = document.getElementById('game');
+const heroEl = document.getElementById('hero');
 
 function initBoard() {
   state.board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(null));
@@ -255,6 +257,8 @@ function finishGame() {
   setAIThinking(false);
   state.aiIntent = null;
   document.getElementById('game').classList.add('hidden');
+  heroEl.classList.remove('hidden');
+  document.body.classList.remove('phase2-mode');
   const result = document.getElementById('result');
   const resultText = document.getElementById('result-text');
 
@@ -343,6 +347,8 @@ function render() {
   if (state.gameOver) return;
   document.getElementById('turn-label').textContent = state.turn === 'player' ? 'Player' : 'Digital Opponent';
   document.getElementById('phase-label').textContent = state.phase2 ? 'Phase 2 (Overlap Enabled)' : 'Phase 1 (No Overlap)';
+  gameEl.classList.toggle('phase2', state.phase2);
+  document.body.classList.toggle('phase2-mode', state.phase2);
   document.getElementById('cards-left').textContent = state.deck.length;
   document.getElementById('player-score').textContent = state.score.player;
   document.getElementById('ai-score').textContent = state.score.ai;
@@ -371,6 +377,7 @@ function startGame() {
   document.getElementById('setup').classList.add('hidden');
   document.getElementById('result').classList.add('hidden');
   document.getElementById('game').classList.remove('hidden');
+  heroEl.classList.add('hidden');
 
   drawCardForTurn();
   setAIThinking(false);
@@ -382,6 +389,8 @@ restartBtn.addEventListener('click', () => {
   document.getElementById('setup').classList.remove('hidden');
   document.getElementById('result').classList.add('hidden');
   document.getElementById('game').classList.add('hidden');
+  heroEl.classList.remove('hidden');
+  document.body.classList.remove('phase2-mode');
   setAIThinking(false);
 });
 
