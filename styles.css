@@ -10,6 +10,10 @@ body {
   color: #14213d;
 }
 
+body.phase2-mode {
+  background: radial-gradient(circle at top, #fff2e6, #f8eee4 45%, #f6f2ec);
+}
+
 .app {
   max-width: 980px;
   margin: 0 auto;
@@ -45,6 +49,12 @@ body {
   padding-right: 0.1rem;
 }
 
+#game.phase2 .board {
+  box-shadow: 0 0 0 3px rgba(230, 125, 30, 0.5);
+  border-radius: 12px;
+  padding: 4px;
+}
+
 select,
 button {
   border-radius: 10px;
@@ -64,10 +74,10 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .scoreboard {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
   gap: 0.4rem;
-  margin-bottom: calc(env(safe-area-inset-bottom) + 4.2rem);
+  margin-bottom: 0;
 }
 
 .score-pill {
@@ -80,10 +90,10 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   gap: 0.45rem;
 }
 
-.score-pill strong { font-size: 1.15rem; line-height: 1; }
+.score-pill strong { font-size: 1.15rem; line-height: 1; min-width: 1.7rem; text-align: right; }
 .player-pill { background: #dcecff; color: #0f4fa8; }
 .ai-pill { background: #ffe0e0; color: #972323; }
-.score-center { text-align: center; font-size: 0.78rem; white-space: nowrap; }
+.score-center { grid-column: 1 / -1; display: flex; justify-content: space-around; gap: 0.35rem; text-align: center; font-size: 0.78rem; white-space: nowrap; }
 .score-center p { margin: 0.05rem 0; }
 
 .compact-row {
@@ -262,8 +272,6 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 @media (max-width: 700px) {
   .app { padding-left: 0.35rem; padding-right: 0.35rem; }
-  .scoreboard { grid-template-columns: 1fr 1fr; }
-  .score-center { grid-column: 1 / -1; order: -1; }
   .board { --cell-size: min(11.2vw, 5svh, 44px); }
   .legend-panel p { font-size: 0.68rem; }
 }
