@@ -221,6 +221,12 @@ function moveCursor(dx, dy) {
   renderBoard();
 }
 
+function getProjectedOwner(cellOwner) {
+  if (cellOwner === null) return 'player';
+  if (cellOwner === 'player') return 'ai';
+  return 'player';
+}
+
 function renderBoard() {
   boardEl.innerHTML = '';
   const overlay = state.turn === 'player' && state.card ? getPlacedCells(state.card, state.rotation, state.cursor.x, state.cursor.y) : null;
@@ -232,34 +238,16 @@ function renderBoard() {
       const cell = document.createElement('button');
       cell.type = 'button';
       cell.className = 'cell';
+      cell.dataset.x = String(x);
+      cell.dataset.y = String(y);
       const owner = state.board[y][x];
       if (owner) cell.classList.add(owner);
-      if (overlaySet.has(`${x},${y}`)) cell.classList.add(overlayLegality.legal ? 'ghost-legal' : 'ghost-illegal');
 
-      cell.addEventListener('mouseenter', () => {
-        if (state.turn !== 'player' || state.gameOver) return;
-        state.cursor = { x, y };
-        renderBoard();
-      });
-
-      cell.addEventListener('click', () => {
-        if (state.turn !== 'player' || state.gameOver) return;
-        state.cursor = { x, y };
-        const tappedMove = currentPlayerMove();
-        if (checkMove(tappedMove.cells, 'player', state.phase2).legal) {
-          tryPlacePlayerMove();
-        } else {
-          render();
-        }
-      });
-
-      cell.addEventListener('contextmenu', (event) => {
-        event.preventDefault();
-        if (state.turn !== 'player' || state.gameOver) return;
-        state.cursor = { x, y };
-        state.rotation = (state.rotation + 1) % 4;
-        render();
-      });
+      if (overlaySet.has(`${x},${y}`)) {
+        const projectedOwner = getProjectedOwner(owner);
+        cell.classList.add(projectedOwner === 'player' ? 'ghost-player' : 'ghost-ai');
+        cell.classList.add(overlayLegality.legal ? 'ghost-legal' : 'ghost-illegal');
+      }
 
       boardEl.appendChild(cell);
     }
@@ -312,6 +300,44 @@ rotateBtn.addEventListener('click', () => {
   render();
 });
 placeBtn.addEventListener('click', tryPlacePlayerMove);
+
+boardEl.addEventListener('mouseover', (event) => {
+  const target = event.target.closest('.cell');
+  if (!target || state.turn !== 'player' || state.gameOver) return;
+  const x = Number(target.dataset.x);
+  const y = Number(target.dataset.y);
+  if (Number.isNaN(x) || Number.isNaN(y)) return;
+  state.cursor = { x, y };
+  renderBoard();
+});
+
+boardEl.addEventListener('click', (event) => {
+  const target = event.target.closest('.cell');
+  if (!target || state.turn !== 'player' || state.gameOver) return;
+  const x = Number(target.dataset.x);
+  const y = Number(target.dataset.y);
+  if (Number.isNaN(x) || Number.isNaN(y)) return;
+  state.cursor = { x, y };
+  const tappedMove = currentPlayerMove();
+  if (checkMove(tappedMove.cells, 'player', state.phase2).legal) {
+    tryPlacePlayerMove();
+  } else {
+    render();
+  }
+});
+
+boardEl.addEventListener('contextmenu', (event) => {
+  const target = event.target.closest('.cell');
+  if (!target) return;
+  event.preventDefault();
+  if (state.turn !== 'player' || state.gameOver) return;
+  const x = Number(target.dataset.x);
+  const y = Number(target.dataset.y);
+  if (Number.isNaN(x) || Number.isNaN(y)) return;
+  state.cursor = { x, y };
+  state.rotation = (state.rotation + 1) % 4;
+  render();
+});
 
 document.getElementById('move-up').addEventListener('click', () => state.turn === 'player' && moveCursor(0, -1));
 document.getElementById('move-down').addEventListener('click', () => state.turn === 'player' && moveCursor(0, 1));
