@@ -287,3 +287,21 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   background: #eef5ff;
   color: #0f4fa8;
 }
+
+.result-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 24, 45, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 30;
+  padding: 1rem;
+}
+
+.result-card {
+  width: min(92vw, 460px);
+}
+
+.result-overlay.hidden {
+  display: none;
+}
