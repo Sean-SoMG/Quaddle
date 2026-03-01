@@ -1,6 +1,6 @@
 const BOARD_SIZE = 7;
-const AI_THINK_DELAY_MS = 650;
-const AI_APPLY_DELAY_MS = 750;
+const AI_THINK_DELAY_MS = 900;
+const AI_INTENT_DELAY_MS = 3000;
 
 const SHAPES = {
   I: [[0, 0], [1, 0], [2, 0], [3, 0]],
@@ -26,6 +26,7 @@ const state = {
   cursor: { x: 1, y: 1 },
   aiIntent: null,
   gameOver: false,
+  playerPreviewActive: false,
 };
 
 const boardEl = document.getElementById('board');
@@ -157,15 +158,24 @@ function evaluateMove(move, player, difficulty) {
   const scoreBefore = { ...state.score };
 
   applyMove(move, player);
-  const gained = state.score[player] - scoreBefore[player];
+  const gainedSelf = state.score[player] - scoreBefore[player];
+  const gainedOpp = state.score[opponent] - scoreBefore[opponent];
   const pieceAdv = countPieces(player) - countPieces(opponent);
 
   state.board = snapshot;
   state.score = scoreBefore;
 
   if (difficulty === 'easy') return Math.random() * 10;
-  if (difficulty === 'standard') return gained * 10 + pieceAdv + Math.random() * 4;
-  return gained * 15 + pieceAdv * 2;
+
+  let strategicPenalty = 0;
+  const winsNow = scoreBefore[player] + gainedSelf >= 5;
+  const opponentWouldWin = scoreBefore[opponent] + gainedOpp >= 5;
+  if (gainedOpp > 0 && !winsNow && !opponentWouldWin) {
+    strategicPenalty = gainedOpp * 20;
+  }
+
+  if (difficulty === 'standard') return gainedSelf * 10 + pieceAdv + Math.random() * 4 - strategicPenalty;
+  return gainedSelf * 15 + pieceAdv * 2 - strategicPenalty;
 }
 
 function drawCardForTurn() {
@@ -177,6 +187,7 @@ function drawCardForTurn() {
   state.card = state.deck.pop();
   state.rotation = 0;
   state.cursor = { x: 1, y: 1 };
+  state.playerPreviewActive = false;
   maybeUnlockPhase2(state.turn);
   return true;
 }
@@ -225,6 +236,7 @@ function doAITurn() {
     : scored[0];
 
   state.aiIntent = pick.move;
+  aiBannerEl.textContent = 'Opponent will place here...';
   render();
 
   setTimeout(() => {
@@ -233,7 +245,7 @@ function doAITurn() {
     state.aiIntent = null;
     setAIThinking(false);
     endTurn();
-  }, AI_APPLY_DELAY_MS);
+  }, AI_INTENT_DELAY_MS);
 }
 
 function endTurn() {
@@ -248,6 +260,7 @@ function endTurn() {
 
   if (state.turn === 'ai') {
     setAIThinking(true);
+    aiBannerEl.textContent = 'Opponent is choosing a move...';
     setTimeout(doAITurn, AI_THINK_DELAY_MS);
   }
 }
@@ -256,9 +269,10 @@ function finishGame() {
   state.gameOver = true;
   setAIThinking(false);
   state.aiIntent = null;
-  document.getElementById('game').classList.add('hidden');
   heroEl.classList.remove('hidden');
   document.body.classList.remove('phase2-mode');
+  document.getElementById('player-score').textContent = state.score.player;
+  document.getElementById('ai-score').textContent = state.score.ai;
   const result = document.getElementById('result');
   const resultWinner = document.getElementById('result-winner');
   const resultText = document.getElementById('result-text');
@@ -333,7 +347,7 @@ function getProjectedOwner(cellOwner, player) {
 function renderBoard() {
   boardEl.innerHTML = '';
 
-  const playerOverlay = state.turn === 'player' && state.card
+  const playerOverlay = state.turn === 'player' && state.card && state.playerPreviewActive
     ? getPlacedCells(state.card, state.rotation, state.cursor.x, state.cursor.y)
     : null;
   const playerOverlaySet = playerOverlay ? new Set(playerOverlay.map(([x, y]) => `${x},${y}`)) : null;
@@ -408,6 +422,7 @@ function startGame() {
 
   drawCardForTurn();
   setAIThinking(false);
+  aiBannerEl.textContent = 'Opponent is planning move…';
   render();
 }
 
@@ -415,9 +430,10 @@ startBtn.addEventListener('click', startGame);
 restartBtn.addEventListener('click', () => {
   document.getElementById('setup').classList.remove('hidden');
   document.getElementById('result').classList.add('hidden');
-  document.getElementById('game').classList.add('hidden');
   heroEl.classList.remove('hidden');
   document.body.classList.remove('phase2-mode');
+  document.getElementById('player-score').textContent = state.score.player;
+  document.getElementById('ai-score').textContent = state.score.ai;
   setAIThinking(false);
 });
 
@@ -438,6 +454,7 @@ boardEl.addEventListener('pointermove', (event) => {
   if (Number.isNaN(x) || Number.isNaN(y)) return;
   if (x === state.cursor.x && y === state.cursor.y) return;
   state.cursor = { x, y };
+  state.playerPreviewActive = true;
   renderBoard();
 });
 
@@ -448,6 +465,7 @@ boardEl.addEventListener('click', (event) => {
   const y = Number(target.dataset.y);
   if (Number.isNaN(x) || Number.isNaN(y)) return;
   state.cursor = { x, y };
+  state.playerPreviewActive = true;
   tryPlacePlayerMove();
 });
 
@@ -460,14 +478,15 @@ boardEl.addEventListener('contextmenu', (event) => {
   const y = Number(target.dataset.y);
   if (Number.isNaN(x) || Number.isNaN(y)) return;
   state.cursor = { x, y };
+  state.playerPreviewActive = true;
   state.rotation = (state.rotation + 1) % 4;
   render();
 });
 
-document.getElementById('move-up').addEventListener('click', () => state.turn === 'player' && moveCursor(0, -1));
-document.getElementById('move-down').addEventListener('click', () => state.turn === 'player' && moveCursor(0, 1));
-document.getElementById('move-left').addEventListener('click', () => state.turn === 'player' && moveCursor(-1, 0));
-document.getElementById('move-right').addEventListener('click', () => state.turn === 'player' && moveCursor(1, 0));
+document.getElementById('move-up').addEventListener('click', () => { if (state.turn !== 'player') return; state.playerPreviewActive = true; moveCursor(0, -1); });
+document.getElementById('move-down').addEventListener('click', () => { if (state.turn !== 'player') return; state.playerPreviewActive = true; moveCursor(0, 1); });
+document.getElementById('move-left').addEventListener('click', () => { if (state.turn !== 'player') return; state.playerPreviewActive = true; moveCursor(-1, 0); });
+document.getElementById('move-right').addEventListener('click', () => { if (state.turn !== 'player') return; state.playerPreviewActive = true; moveCursor(1, 0); });
 
 initBoard();
 renderBoard();
