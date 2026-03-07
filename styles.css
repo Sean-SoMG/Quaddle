@@ -20,7 +20,8 @@ body.phase2-mode {
   margin: 0 auto;
   height: var(--game-h);
   padding: calc(env(safe-area-inset-top) + 0.3rem) 0.45rem calc(env(safe-area-inset-bottom) + 0.3rem);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;   /* setup screen scrolls when rules open; game manages its own overflow */
   box-sizing: border-box;
 }
 
@@ -470,6 +471,78 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   .legend-panel p { font-size: 0.68rem; }
 }
 
+
+/* ── Setup screen ── */
+.start-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.start-row label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* ── How to Play accordion ── */
+.how-to-play {
+  margin-top: 0.75rem;
+  border-top: 1px solid #dde5f0;
+  padding-top: 0.45rem;
+}
+
+.how-to-play > summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #0f4fa8;
+  list-style: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.1rem 0;
+}
+
+.how-to-play > summary::-webkit-details-marker { display: none; }
+
+.how-to-play > summary::before {
+  content: "▸";
+  display: inline-block;
+  font-size: 0.75rem;
+  transition: transform 0.15s ease;
+}
+
+.how-to-play[open] > summary::before { transform: rotate(90deg); }
+
+.rules-body {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #2a3550;
+}
+
+.rules-body h3 {
+  margin: 0.65rem 0 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0f4fa8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rules-body h3:first-child { margin-top: 0.2rem; }
+
+.rules-body p  { margin: 0.15rem 0; }
+
+.rules-body ul {
+  margin: 0.2rem 0;
+  padding-left: 1.15rem;
+}
+
+.rules-body li { margin: 0.2rem 0; }
 
 /* ── Result overlay ── */
 .winner-banner {

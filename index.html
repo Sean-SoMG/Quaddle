@@ -13,14 +13,49 @@
     </header>
 
     <section id="setup" class="panel">
-      <h2>Start Game</h2>
-      <label for="difficulty">Digital Opponent</label>
-      <select id="difficulty">
-        <option value="easy">Easy</option>
-        <option value="standard" selected>Standard</option>
-        <option value="expert">Expert</option>
-      </select>
-      <button id="start-btn">Start</button>
+      <div class="start-row">
+        <label for="difficulty">Opponent</label>
+        <select id="difficulty">
+          <option value="easy">Easy</option>
+          <option value="standard" selected>Standard</option>
+          <option value="expert">Expert</option>
+        </select>
+        <button id="start-btn">Start</button>
+      </div>
+
+      <details class="how-to-play">
+        <summary>How to Play</summary>
+        <div class="rules-body">
+          <h3>The Board</h3>
+          <p>Two players take turns placing Tetromino-shaped pieces on a 7×7 grid — you vs a digital opponent.</p>
+
+          <h3>Your Turn</h3>
+          <p>Each turn you draw a card showing the piece you must place:</p>
+          <ul>
+            <li>Use <strong>←→↑↓</strong> to position the piece, or click / tap a board square directly</li>
+            <li>Press <strong>Rotate 90°</strong> to rotate before placing</li>
+            <li>Press <strong>Place</strong> to commit the move</li>
+          </ul>
+
+          <h3>Scoring</h3>
+          <p>Fill an entire row or column with <em>only your pieces</em> → score <strong>1 point</strong> and that line clears.</p>
+
+          <h3>Phase 2 — Capture Mode</h3>
+          <p>Unlocks when a player can't fit their piece on the board in Phase 1. Both players then play under Capture rules:</p>
+          <ul>
+            <li><strong>Opponent's squares</strong> → captured (become your colour)</li>
+            <li><strong>Your own squares</strong> → flipped to opponent's colour — be careful!</li>
+            <li>Max <strong>3 opponent squares</strong> may be captured per piece</li>
+          </ul>
+
+          <h3>Winning</h3>
+          <ul>
+            <li>First to <strong>5 points</strong> wins immediately</li>
+            <li>If the deck runs out, highest score wins</li>
+            <li>If scores are tied, most pieces on the board wins</li>
+          </ul>
+        </div>
+      </details>
     </section>
 
     <section id="game" class="hidden">
