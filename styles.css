@@ -1,7 +1,8 @@
 :root {
   color-scheme: light;
   font-family: Inter, system-ui, Arial, sans-serif;
-  --host-header-space: 10vh;
+  --host-header-space: 15svh;          /* matches the hosting site's top banner */
+  --game-h: calc(100svh - var(--host-header-space));
 }
 
 body {
@@ -17,11 +18,10 @@ body.phase2-mode {
 .app {
   max-width: 980px;
   margin: 0 auto;
-  min-height: calc(100svh - var(--host-header-space));
-  max-height: calc(100svh - var(--host-header-space));
-  padding: calc(env(safe-area-inset-top) + 0.3rem) 0.45rem calc(env(safe-area-inset-bottom) + 4.4rem);
-  overflow-x: clip;
-  overflow-y: auto;
+  height: var(--game-h);
+  padding: calc(env(safe-area-inset-top) + 0.3rem) 0.45rem calc(env(safe-area-inset-bottom) + 0.3rem);
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .panel {
@@ -39,14 +39,16 @@ body.phase2-mode {
 
 .hero h1 { margin: 0; font-size: 1rem; }
 .hidden { display: none; }
+/* Override: ID-level rule for #game would beat .hidden without this */
+#game.hidden { display: none; }
 
+/* ── Game grid: mobile-first vertical stack ── */
 #game {
   display: grid;
   gap: 0.35rem;
-  grid-template-rows: auto auto 1fr auto;
-  max-height: calc(100svh - var(--host-header-space) - 1.25rem);
-  overflow-y: auto;
-  padding-right: 0.1rem;
+  grid-template-rows: auto auto 1fr auto auto;  /* scoreboard | info | board | ai-banner | controls */
+  height: 100%;
+  overflow: hidden;
 }
 
 #game.phase2 .board {
@@ -72,6 +74,7 @@ button {
 
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* ── Scoreboard ── */
 .scoreboard {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -99,6 +102,17 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .score-center { grid-column: 1 / -1; display: flex; justify-content: space-around; gap: 0.3rem; text-align: center; font-size: 0.74rem; white-space: nowrap; }
 .score-center p { margin: 0.05rem 0; }
 
+/* Personality label shown inside the AI score pill */
+.ai-pill-personality {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 600;
+  opacity: 0.75;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* ── Card + guide row (mobile: side by side) ── */
 .compact-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -146,8 +160,24 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .swatch.ai { background: rgba(255, 159, 28, 0.25); border-color: #ff9f1c; }
 .swatch.ai::before { content: "•"; color: #9c5f00; font-size: 0.95rem; line-height: 0.5; }
 
+/* ── Board ──
+   --cell-size is the binding constraint:
+   · Width formula:  (viewport − horizontal padding) ÷ 7.6
+   · Height formula: (game height − fixed panel budget) ÷ 7.4
+   · Hard cap for large screens
+   The min() ensures the board never overflows in either axis.
+   Height formula derivation (mobile, measured at 664px viewport):
+     overhead = scoreboard(83) + top-controls(94) + dock(90) +
+                grid-gaps(17) + app-padding(10) + board-internal-gaps(24) = 318px
+     cell = (game-h − 318px) / 7
+   Width formula: (viewport − h-padding) / 7.6 (accounts for 6 inter-cell gaps)
+*/
 .board {
-  --cell-size: min(10.2vw, 4.9svh, 46px);
+  --cell-size: min(
+    calc((100vw - 1rem) / 7.6),
+    calc((var(--game-h) - 318px) / 7),
+    58px
+  );
   display: grid;
   grid-template-columns: repeat(7, var(--cell-size));
   grid-template-rows: repeat(7, var(--cell-size));
@@ -159,6 +189,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 }
 
 .cell {
+  padding: 0;            /* override button { padding: 0.45rem 0.6rem } */
   border-radius: 8px;
   border: 2px solid #cad5e3;
   background: #fff;
@@ -221,64 +252,226 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   font-size: 0.8rem;
 }
 
+/* Card preview: 12px cells keep it compact while remaining readable */
 .card-preview {
   display: grid;
-  grid-template-columns: repeat(4, 18px);
-  grid-template-rows: repeat(4, 18px);
+  grid-template-columns: repeat(4, 12px);
+  grid-template-rows: repeat(4, 12px);
   gap: 2px;
   margin: 0;
-  min-height: 78px;
+  min-height: 50px;
   align-content: start;
 }
 
 .card-preview div { border-radius: 4px; background: #e7ecf2; border: 1px solid #ccd6e6; }
 .card-preview .filled { background: #3f8cff; border-color: #1a67d1; }
 
+/* Controls dock — horizontal layout keeps height to ~95px on all sizes */
 .controls-dock {
   position: static;
   background: rgba(255, 255, 255, 0.97);
-  padding: 0.4rem;
-  margin-bottom: calc(env(safe-area-inset-bottom) + 4.2rem);
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
 }
 
+/* Action buttons: stacked column on the left */
 .dock-main-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.4rem;
-  margin-bottom: 0.35rem;
-  max-width: 360px;
-  margin-left: auto;
-  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  width: 110px;
+  flex-shrink: 0;
 }
 
 .dock-main-actions button,
 .dpad-grid button {
-  min-height: 42px;
+  min-height: 38px;
   width: 100%;
   font-weight: 700;
   display: grid;
   place-items: center;
 }
 
+/* D-pad: 3×2 grid to the right of the action buttons */
 .dpad-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.35rem;
-  max-width: 220px;
-  margin: 0 auto;
+  grid-template-columns: repeat(3, 40px);
+  gap: 0.3rem;
+  margin: 0;
+  flex-shrink: 0;
 }
 
-#move-up { grid-column: 2; }
-#move-left { grid-column: 1; grid-row: 2; }
-#move-down { grid-column: 2; grid-row: 2; }
+#move-up    { grid-column: 2; }
+#move-left  { grid-column: 1; grid-row: 2; }
+#move-down  { grid-column: 2; grid-row: 2; }
 #move-right { grid-column: 3; grid-row: 2; }
 
+
+/* ═══════════════════════════════════════════════════════════
+   WIDE LAYOUT — tablet portrait, tablet landscape, desktop
+   Triggers at ≥600px wide AND ≥500px tall.
+   Landscape phones (short) are handled separately below.
+   ═══════════════════════════════════════════════════════════ */
+@media (min-width: 600px) and (min-height: 500px) {
+
+  #game {
+    grid-template-columns: 165px 1fr;
+    grid-template-rows: auto 1fr auto auto;
+    align-items: start;
+    gap: 0.45rem;
+  }
+
+  /* Scoreboard: full width across both columns */
+  .scoreboard {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  /* Left sidebar: card preview + guide, stacked vertically */
+  .top-controls {
+    grid-column: 1;
+    grid-row: 2 / 4;          /* spans board row + ai-banner row */
+    display: flex !important; /* override .compact-row grid */
+    flex-direction: column;
+    gap: 0.35rem;
+    align-self: start;
+  }
+
+  .top-controls .panel {
+    margin-bottom: 0;         /* gap handles spacing instead */
+  }
+
+  /* Board: right column, main row */
+  #board {
+    grid-column: 2;
+    grid-row: 2;
+    margin: 0 auto;
+  }
+
+  /* AI banner: right column, below board */
+  #ai-banner {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  /* Controls: full-width bar at bottom */
+  .controls-dock {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    gap: 2.5rem;
+  }
+
+  /* Wider action buttons on tablet/PC */
+  .dock-main-actions {
+    width: 140px;
+  }
+
+  /* Board cells (wide layout):
+     overhead = scoreboard(83) + controls(90) + gaps(22) + app-pad(10) + board-gaps(24) = 229px
+     Height formula: (game-h − 229px) / 7
+     Width formula: right-column width ÷ 7.6 */
+  .board {
+    --cell-size: min(
+      calc((100vw - 165px - 1.5rem) / 7.6),
+      calc((var(--game-h) - 229px) / 7),
+      68px
+    );
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   LANDSCAPE PHONE — short viewport (≤500px tall) in landscape
+   Board goes left, sidebar (card + guide + controls) goes right.
+   ═══════════════════════════════════════════════════════════ */
+@media (orientation: landscape) and (max-height: 500px) {
+
+  #game {
+    grid-template-columns: 1fr 170px;
+    grid-template-rows: auto 1fr auto;  /* row 3 = controls dock */
+    gap: 0.3rem;
+    align-items: start;
+  }
+
+  /* Compact scoreboard — drop the 3rd center-info row */
+  .scoreboard {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    grid-template-columns: 1fr 1fr; /* just the two pills */
+  }
+  .score-center { display: none; }
+
+  /* Board fills the left column, spanning both content rows */
+  #board {
+    grid-column: 1;
+    grid-row: 2 / 4;
+    margin: 0;
+  }
+
+  /* No room for the AI banner in landscape */
+  #ai-banner { display: none; }
+
+  /* Card + guide: right column, top */
+  .top-controls {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.25rem;
+    align-self: start;
+  }
+
+  .top-controls .panel { margin-bottom: 0; padding: 0.3rem; }
+
+  /* Controls dock: right column, explicit row 3 */
+  .controls-dock {
+    grid-column: 2;
+    grid-row: 3;
+    padding: 0.3rem;
+    margin-bottom: 0;
+  }
+
+  .controls-dock { gap: 0.6rem; padding: 0.25rem; }
+  .dock-main-actions { width: 80px; gap: 0.2rem; }
+  .dock-main-actions button,
+  .dpad-grid button { min-height: 30px; font-size: 0.75rem; }
+  .dpad-grid { grid-template-columns: repeat(3, 30px); gap: 0.2rem; }
+
+  /* Smaller card preview for tight sidebar */
+  .card-preview {
+    grid-template-columns: repeat(4, 9px);
+    grid-template-rows: repeat(4, 9px);
+    min-height: 40px;
+  }
+
+  .card-panel h2, .legend-panel h2 { font-size: 0.7rem; }
+
+  /* Board cells (landscape phone):
+     overhead = scoreboard(42) + gap(6) + app-padding(10) + board-inner-gaps(24) = 82px
+     Width: viewport minus right sidebar and padding */
+  .board {
+    --cell-size: min(
+      calc((var(--game-h) - 82px) / 7),
+      calc((100vw - 185px - 1rem) / 7.6),
+      38px
+    );
+  }
+}
+
+
+/* ── Narrow phone tweak (≤700px, portrait) ── */
 @media (max-width: 700px) {
   .app { padding-left: 0.35rem; padding-right: 0.35rem; }
-  .board { --cell-size: min(11.2vw, 5svh, 44px); }
   .legend-panel p { font-size: 0.68rem; }
 }
 
+
+/* ── Result overlay ── */
 .winner-banner {
   margin: 0 0 0.35rem;
   padding: 0.4rem 0.55rem;

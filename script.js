@@ -2,6 +2,7 @@ const BOARD_SIZE = 7;
 const AI_THINK_DELAY_MS = 900;
 const AI_INTENT_DELAY_MS = 3000;
 
+/* ── Piece shapes ── */
 const SHAPES = {
   I: [[0, 0], [1, 0], [2, 0], [3, 0]],
   O: [[0, 0], [1, 0], [0, 1], [1, 1]],
@@ -14,6 +15,30 @@ const SHAPES = {
 
 const CARD_DISTRIBUTION = { I: 6, O: 8, T: 8, L: 8, J: 8, S: 8, Z: 8 };
 
+/* ── AI Personality system ──
+   Each difficulty has 3 personalities assigned randomly at game start.
+   They change evaluation weights so every game feels different even at
+   the same difficulty setting.
+*/
+const PERSONALITIES = {
+  easy:     ['scatter',    'clustered',  'edge'],
+  standard: ['balanced',   'aggressive', 'territorial'],
+  expert:   ['optimizer',  'blocker',    'expansionist'],
+};
+
+const PERSONALITY_NAMES = {
+  scatter:     'Wanderer',
+  clustered:   'Gravitator',
+  edge:        'Edger',
+  balanced:    'Tactician',
+  aggressive:  'Scorer',
+  territorial: 'Builder',
+  optimizer:   'Optimizer',
+  blocker:     'Defender',
+  expansionist:'Expander',
+};
+
+/* ── Game state ── */
 const state = {
   board: [],
   deck: [],
@@ -21,6 +46,7 @@ const state = {
   phase2: false,
   score: { player: 0, ai: 0 },
   difficulty: 'standard',
+  personality: null,
   card: null,
   rotation: 0,
   cursor: { x: 1, y: 1 },
@@ -29,16 +55,18 @@ const state = {
   playerPreviewActive: false,
 };
 
-const boardEl = document.getElementById('board');
-const startBtn = document.getElementById('start-btn');
-const restartBtn = document.getElementById('restart-btn');
-const rotateBtn = document.getElementById('rotate-btn');
-const placeBtn = document.getElementById('place-btn');
+/* ── DOM references ── */
+const boardEl      = document.getElementById('board');
+const startBtn     = document.getElementById('start-btn');
+const restartBtn   = document.getElementById('restart-btn');
+const rotateBtn    = document.getElementById('rotate-btn');
+const placeBtn     = document.getElementById('place-btn');
 const difficultyEl = document.getElementById('difficulty');
-const aiBannerEl = document.getElementById('ai-banner');
-const gameEl = document.getElementById('game');
-const heroEl = document.getElementById('hero');
+const aiBannerEl   = document.getElementById('ai-banner');
+const gameEl       = document.getElementById('game');
+const heroEl       = document.getElementById('hero');
 
+/* ── Board helpers ── */
 function initBoard() {
   state.board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(null));
 }
@@ -129,10 +157,7 @@ function applyMove(move, player) {
     if (!owner) continue;
     let full = true;
     for (let y = 0; y < BOARD_SIZE; y++) {
-      if (state.board[y][x] !== owner) {
-        full = false;
-        break;
-      }
+      if (state.board[y][x] !== owner) { full = false; break; }
     }
     if (full) {
       clearCols.push({ index: x, owner });
@@ -149,41 +174,123 @@ function applyMove(move, player) {
 }
 
 function countPieces(player) {
-  return state.board.flat().filter((value) => value === player).length;
+  return state.board.flat().filter((v) => v === player).length;
 }
 
-function evaluateMove(move, player, difficulty) {
+/* Count lines (rows or cols) where `player` occupies all but ≤1 cells.
+   Used by the 'blocker' personality to penalise moves that leave the
+   opponent close to scoring. Called while the board has a move applied. */
+function countNearCompleteLines(player) {
+  let count = 0;
+  for (let y = 0; y < BOARD_SIZE; y++) {
+    if (state.board[y].filter((v) => v === player).length >= BOARD_SIZE - 1) count++;
+  }
+  for (let x = 0; x < BOARD_SIZE; x++) {
+    let n = 0;
+    for (let y = 0; y < BOARD_SIZE; y++) if (state.board[y][x] === player) n++;
+    if (n >= BOARD_SIZE - 1) count++;
+  }
+  return count;
+}
+
+/* ── AI evaluation ──
+   Each personality has different weights so the AI genuinely plays
+   a different style every game, not just different levels of randomness.
+
+   Easy personalities  – mostly random, small strategic flavour
+   Standard            – strategic weights + a little noise, occasionally picks 2nd best
+   Expert              – pure weights, no noise, rarely picks 2nd/3rd best
+*/
+function evaluateMove(move, player, difficulty, personality) {
   const opponent = player === 'player' ? 'ai' : 'player';
-  const snapshot = state.board.map((row) => [...row]);
+  const snapshot  = state.board.map((row) => [...row]);
   const scoreBefore = { ...state.score };
 
   applyMove(move, player);
-  const gainedSelf = state.score[player] - scoreBefore[player];
-  const gainedOpp = state.score[opponent] - scoreBefore[opponent];
-  const pieceAdv = countPieces(player) - countPieces(opponent);
+  const gainedSelf = state.score[player]   - scoreBefore[player];
+  const gainedOpp  = state.score[opponent] - scoreBefore[opponent];
+  const pieceAdv   = countPieces(player) - countPieces(opponent);
+
+  // Blocker: how many opponent lines are near-complete after this move?
+  const opponentThreats = (personality === 'blocker') ? countNearCompleteLines(opponent) : 0;
 
   state.board = snapshot;
   state.score = scoreBefore;
 
-  if (difficulty === 'easy') return Math.random() * 10;
+  /* ── Easy personalities: mostly random, spatial flavour only ── */
+  if (difficulty === 'easy') {
+    const center = (BOARD_SIZE - 1) / 2;
 
+    if (personality === 'clustered') {
+      // Prefers moves near the centre of the board
+      const proximity = move.cells.reduce(
+        (s, [x, y]) => s + (7 - Math.abs(x - center) - Math.abs(y - center)),
+        0
+      ) / move.cells.length;
+      return Math.random() * 8 + proximity * 0.5;
+    }
+
+    if (personality === 'edge') {
+      // Prefers moves close to board edges
+      const edginess = move.cells.reduce(
+        (s, [x, y]) => s + Math.min(x, BOARD_SIZE - 1 - x, y, BOARD_SIZE - 1 - y),
+        0
+      ) / move.cells.length;
+      return Math.random() * 8 + (3 - edginess); // lower edginess = closer to edge = better
+    }
+
+    // 'scatter': pure random
+    return Math.random() * 10;
+  }
+
+  /* ── Standard / Expert: strategic evaluation ── */
+
+  // Never give the opponent points unless you win now or they'd win anyway
   let strategicPenalty = 0;
-  const winsNow = scoreBefore[player] + gainedSelf >= 5;
-  const opponentWouldWin = scoreBefore[opponent] + gainedOpp >= 5;
+  const winsNow       = scoreBefore[player]   + gainedSelf >= 5;
+  const opponentWouldWin = scoreBefore[opponent] + gainedOpp  >= 5;
   if (gainedOpp > 0 && !winsNow && !opponentWouldWin) {
     strategicPenalty = gainedOpp * 20;
   }
 
-  if (difficulty === 'standard') return gainedSelf * 10 + pieceAdv + Math.random() * 4 - strategicPenalty;
-  return gainedSelf * 15 + pieceAdv * 2 - strategicPenalty;
+  // Expert has zero noise (near-optimal); standard gets a small random nudge
+  const noise = difficulty === 'expert' ? 0 : Math.random() * 5;
+
+  if (personality === 'aggressive') {
+    // Scores lines at all costs, ignores territory
+    return gainedSelf * 15 + pieceAdv * 0.3 + noise - strategicPenalty;
+  }
+
+  if (personality === 'territorial') {
+    // Maximises cells on the board; scoring is secondary
+    return gainedSelf * 6 + pieceAdv * 3 + noise - strategicPenalty;
+  }
+
+  if (personality === 'optimizer') {
+    // Expert: balanced high-weight scorer
+    return gainedSelf * 15 + pieceAdv * 2 - strategicPenalty;
+  }
+
+  if (personality === 'blocker') {
+    // Expert: punishes positions that leave opponent close to completing lines
+    return gainedSelf * 12 + pieceAdv * 2 - opponentThreats * 5 - strategicPenalty;
+  }
+
+  if (personality === 'expansionist') {
+    // Expert: dominates the board, scores when opportunities arise
+    return gainedSelf * 8 + pieceAdv * 4 - strategicPenalty;
+  }
+
+  // 'balanced' (standard default)
+  return gainedSelf * 10 + pieceAdv + noise - strategicPenalty;
 }
 
+/* ── Turn management ── */
 function drawCardForTurn() {
   if (state.deck.length === 0) {
     finishGame();
     return false;
   }
-
   state.card = state.deck.pop();
   state.rotation = 0;
   state.cursor = { x: 1, y: 1 };
@@ -213,6 +320,14 @@ function setAIThinking(isThinking) {
   aiBannerEl.classList.toggle('hidden', !isThinking);
 }
 
+/* ── AI turn ──
+   Move selection by difficulty:
+   · Easy    — random pick from the top 5 scored moves
+   · Standard — picks best move 80 % of the time, 2nd best 20 %
+   · Expert   — picks best 80 %, 2nd best 15 %, 3rd best 5 %
+   The evaluation weights already differ by personality, so the
+   occasional sub-optimal pick is genuinely unpredictable.
+*/
 function doAITurn() {
   if (state.gameOver) return;
 
@@ -229,11 +344,27 @@ function doAITurn() {
     return;
   }
 
-  const scored = moves.map((m) => ({ move: m, score: evaluateMove(m, 'ai', state.difficulty) }));
+  const scored = moves.map((m) => ({
+    move: m,
+    score: evaluateMove(m, 'ai', state.difficulty, state.personality),
+  }));
   scored.sort((a, b) => b.score - a.score);
-  const pick = state.difficulty === 'easy'
-    ? scored[Math.floor(Math.random() * Math.min(5, scored.length))]
-    : scored[0];
+
+  let pick;
+  if (state.difficulty === 'easy') {
+    // Random from top 5
+    pick = scored[Math.floor(Math.random() * Math.min(5, scored.length))];
+  } else if (state.difficulty === 'standard') {
+    // Mostly optimal, occasionally chooses 2nd best
+    const r = Math.random();
+    pick = (r < 0.80 || scored.length <= 1) ? scored[0] : scored[1];
+  } else {
+    // Expert: near-optimal with very rare sub-optimal choices
+    const r = Math.random();
+    if      (r < 0.80 || scored.length <= 1) pick = scored[0];
+    else if (r < 0.95 || scored.length <= 2) pick = scored[1];
+    else                                      pick = scored[2];
+  }
 
   state.aiIntent = pick.move;
   aiBannerEl.textContent = 'Opponent will place here...';
@@ -273,9 +404,9 @@ function finishGame() {
   document.body.classList.remove('phase2-mode');
   document.getElementById('player-score').textContent = state.score.player;
   document.getElementById('ai-score').textContent = state.score.ai;
-  const result = document.getElementById('result');
+  const result       = document.getElementById('result');
   const resultWinner = document.getElementById('result-winner');
-  const resultText = document.getElementById('result-text');
+  const resultText   = document.getElementById('result-text');
 
   let outcome = '';
   let winnerLabel = '';
@@ -313,10 +444,11 @@ function finishGame() {
   }
 
   resultWinner.textContent = winnerLabel;
-  resultText.textContent = `Final score ${state.score.player} - ${state.score.ai}. ${outcome}`;
+  resultText.textContent   = `Final score ${state.score.player}–${state.score.ai}. ${outcome}`;
   result.classList.remove('hidden');
 }
 
+/* ── Rendering ── */
 function updatePreview() {
   const preview = document.getElementById('card-preview');
   preview.innerHTML = '';
@@ -339,8 +471,8 @@ function moveCursor(dx, dy) {
 
 function getProjectedOwner(cellOwner, player) {
   const opponent = player === 'player' ? 'ai' : 'player';
-  if (cellOwner === null) return player;
-  if (cellOwner === player) return opponent;
+  if (cellOwner === null)    return player;
+  if (cellOwner === player)  return opponent;
   return player;
 }
 
@@ -350,9 +482,9 @@ function renderBoard() {
   const playerOverlay = state.turn === 'player' && state.card && state.playerPreviewActive
     ? getPlacedCells(state.card, state.rotation, state.cursor.x, state.cursor.y)
     : null;
-  const playerOverlaySet = playerOverlay ? new Set(playerOverlay.map(([x, y]) => `${x},${y}`)) : null;
+  const playerOverlaySet      = playerOverlay ? new Set(playerOverlay.map(([x, y]) => `${x},${y}`)) : null;
   const playerOverlayLegality = playerOverlay ? checkMove(playerOverlay, 'player', state.phase2) : { legal: false };
-  const aiIntentSet = state.aiIntent ? new Set(state.aiIntent.cells.map(([x, y]) => `${x},${y}`)) : null;
+  const aiIntentSet           = state.aiIntent ? new Set(state.aiIntent.cells.map(([x, y]) => `${x},${y}`)) : null;
 
   for (let y = 0; y < BOARD_SIZE; y++) {
     for (let x = 0; x < BOARD_SIZE; x++) {
@@ -386,31 +518,44 @@ function renderBoard() {
 
 function render() {
   if (state.gameOver) return;
-  document.getElementById('turn-label').textContent = state.turn === 'player' ? 'Player' : 'Digital Opponent';
-  document.getElementById('phase-label').textContent = state.phase2 ? 'Phase 2 (Overlap Enabled)' : 'Phase 1 (No Overlap)';
+  document.getElementById('turn-label').textContent  = state.turn === 'player' ? 'Player' : 'Digital Opponent';
+  document.getElementById('phase-label').textContent = state.phase2 ? 'Phase 2 (Overlap)' : 'Phase 1';
   gameEl.classList.toggle('phase2', state.phase2);
   document.body.classList.toggle('phase2-mode', state.phase2);
-  document.getElementById('cards-left').textContent = state.deck.length;
+  document.getElementById('cards-left').textContent  = state.deck.length;
   document.getElementById('player-score').textContent = state.score.player;
-  document.getElementById('ai-score').textContent = state.score.ai;
+  document.getElementById('ai-score').textContent     = state.score.ai;
+
+  // Show the AI's assigned personality name inside the opponent pill
+  const aiPillSpan = document.querySelector('.ai-pill > span');
+  if (aiPillSpan && state.personality) {
+    const name = PERSONALITY_NAMES[state.personality] ?? '';
+    aiPillSpan.innerHTML = `Opponent<span class="ai-pill-personality">${name}</span>`;
+  }
 
   const playerTurn = state.turn === 'player';
   rotateBtn.disabled = !playerTurn;
-  placeBtn.disabled = !playerTurn;
+  placeBtn.disabled  = !playerTurn;
 
   if (state.card) updatePreview();
   renderBoard();
 }
 
+/* ── Game lifecycle ── */
 function startGame() {
   state.difficulty = difficultyEl.value;
-  state.deck = buildDeck();
-  state.turn = 'player';
-  state.phase2 = false;
-  state.score = { player: 0, ai: 0 };
-  state.card = null;
+
+  // Assign a random personality from the pool for this difficulty
+  const pool = PERSONALITIES[state.difficulty];
+  state.personality = pool[Math.floor(Math.random() * pool.length)];
+
+  state.deck    = buildDeck();
+  state.turn    = 'player';
+  state.phase2  = false;
+  state.score   = { player: 0, ai: 0 };
+  state.card    = null;
   state.rotation = 0;
-  state.cursor = { x: 1, y: 1 };
+  state.cursor  = { x: 1, y: 1 };
   state.gameOver = false;
   state.aiIntent = null;
 
@@ -426,14 +571,16 @@ function startGame() {
   render();
 }
 
+/* ── Event listeners ── */
 startBtn.addEventListener('click', startGame);
+
 restartBtn.addEventListener('click', () => {
   document.getElementById('setup').classList.remove('hidden');
   document.getElementById('result').classList.add('hidden');
   heroEl.classList.remove('hidden');
   document.body.classList.remove('phase2-mode');
   document.getElementById('player-score').textContent = state.score.player;
-  document.getElementById('ai-score').textContent = state.score.ai;
+  document.getElementById('ai-score').textContent     = state.score.ai;
   setAIThinking(false);
 });
 
@@ -483,10 +630,11 @@ boardEl.addEventListener('contextmenu', (event) => {
   render();
 });
 
-document.getElementById('move-up').addEventListener('click', () => { if (state.turn !== 'player') return; state.playerPreviewActive = true; moveCursor(0, -1); });
-document.getElementById('move-down').addEventListener('click', () => { if (state.turn !== 'player') return; state.playerPreviewActive = true; moveCursor(0, 1); });
-document.getElementById('move-left').addEventListener('click', () => { if (state.turn !== 'player') return; state.playerPreviewActive = true; moveCursor(-1, 0); });
+document.getElementById('move-up').addEventListener('click',    () => { if (state.turn !== 'player') return; state.playerPreviewActive = true; moveCursor(0, -1); });
+document.getElementById('move-down').addEventListener('click',  () => { if (state.turn !== 'player') return; state.playerPreviewActive = true; moveCursor(0, 1); });
+document.getElementById('move-left').addEventListener('click',  () => { if (state.turn !== 'player') return; state.playerPreviewActive = true; moveCursor(-1, 0); });
 document.getElementById('move-right').addEventListener('click', () => { if (state.turn !== 'player') return; state.playerPreviewActive = true; moveCursor(1, 0); });
 
+/* ── Boot ── */
 initBoard();
 renderBoard();
